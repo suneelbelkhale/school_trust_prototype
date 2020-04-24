@@ -1,0 +1,32 @@
+<html>
+
+<% if (teacher) { %>
+
+<head>
+	<h1> Teacher Dashboard </h1>
+	<h3><strong>Name: </strong><%= teacher.first %> <%= teacher.last %></h3>
+	<h3><strong>Email: </strong><%= teacher.email %></h3>
+</head>
+<body>
+	<a href="/logout">Log out</a>
+	<!-- <script type="text/javascript">
+		var students = new Array("John", "Ann", "Aaron", "Edwin", "Elizabeth");
+		document.write("<b>Using for loops </b><br />");
+		for (i=0;i<students.length;i++)
+		{
+		document.write(students[i] + "<br />");
+		}
+	</script> -->
+</body>
+
+<% } else { %>
+
+<head>
+	<h1>You are not logged in.</h1>
+	<a href="/">Home</a><br>
+	<a href="/teacherreglog">Teacher Login</a>
+</head>
+
+<% } %>
+
+</html>
