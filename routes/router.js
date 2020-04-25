@@ -3,7 +3,7 @@ var mongoose = require('mongoose');
 var router = express.Router();
 var Teacher = require('../models/teacher');
 var Company = require('../models/company');
-var tr = require('../models/transaction');
+var Transaction = require('../models/transaction');
 
 
 router.get('/', (req, res) => {
@@ -89,22 +89,25 @@ router.post('/teacherreglog', function (req, res, next) {
 router.get('/teacherdashboard', function (req, res, next) {
   Teacher.findById(req.session.teacherId)
     .exec(function (error, user) {
-      if (error) {
-        return next(error);
+      if (error) { throw error; } else if (!user) {
+        res.send('Not logged in.');
       } else {
         Company.find({}).exec(async function (err, docs) {
           if (err) throw err;
           var cnames = docs.map((company, idx, arr) => company.name)
           cnames.sort()
 
-          var opent = await tr.OpenTransaction.find().where('_id').in(user.transaction_ids).exec();
-          var apprt = await tr.ApprovedTransaction.find().where('_id').in(user.transaction_ids).exec();
-          var compt = await tr.CompletedTransaction.find().where('_id').in(user.transaction_ids).exec();
+          var alltrans = await Transaction.find({_id: {$in: user.transaction_ids}}).exec();
+          var opent = alltrans.filter((trans, idx, arr) => trans.status == 'open');
+          var apprt = alltrans.filter((trans, idx, arr) => trans.status == 'approved');
+          var rejet = alltrans.filter((trans, idx, arr) => trans.status == 'rejected');
+          var compt = alltrans.filter((trans, idx, arr) => trans.status == 'completed');
 
           return res.render('teacherdash', {teacher: user, 
             company_names: cnames, 
             open_transactions: opent,
             approved_transactions: apprt,
+            rejected_transactions: rejet,
             completed_transactions: compt})
         });
       }
@@ -117,7 +120,7 @@ router.post('/teacheropentransaction', function (req, res, next) {
     if (error) { return next(error) };
     Company.findOne({'name': req.body.company}).exec(function (error, company) {
       if (error) throw error;
-      tr.OpenTransaction.create({
+      Transaction.create({
           date_requested: new Date(),
           amount: req.body.transaction_amount,
           from_company: company._id,
@@ -218,21 +221,27 @@ router.post('/companyreglog', function (req, res, next) {
 router.get('/companydashboard', function (req, res, next) {
   Company.findById(req.session.companyId)
     .exec(function (error, user) {
-      if (error) {
-        return next(error);
+      if (error) { throw error; } else if (!user) {
+        res.send('Not logged in.');
       } else {
         Teacher.find({}).exec(async function (err, docs) {
           if (err) throw err;
-          var tnames = docs.map((teacher, idx, arr) => { return {'name': teacher.first + " " + teacher.last, 'id': teacher._id} });
+          var tnames = docs.map((teacher, idx, arr) => { 
+            return {'name': teacher.first + " " + teacher.last, 'id': teacher._id}; 
+          });
           tnames.sort((a, b) => a.name < b.name);
-          var opent = await tr.OpenTransaction.find().where('_id').in(user.transaction_ids).exec();
-          var apprt = await tr.ApprovedTransaction.find().where('_id').in(user.transaction_ids).exec();
-          var compt = await tr.CompletedTransaction.find().where('_id').in(user.transaction_ids).exec();
+
+          var alltrans = await Transaction.find({_id: {$in: user.transaction_ids}}).exec();
+          var opent = alltrans.filter((trans, idx, arr) => trans.status == 'open');
+          var apprt = alltrans.filter((trans, idx, arr) => trans.status == 'approved');
+          var rejet = alltrans.filter((trans, idx, arr) => trans.status == 'rejected');
+          var compt = alltrans.filter((trans, idx, arr) => trans.status == 'completed');
 
           return res.render('companydash', {company: user, 
             teacher_names: tnames, 
             open_transactions: opent,
             approved_transactions: apprt,
+            rejected_transactions: rejet,
             completed_transactions: compt})
         });
       }
@@ -245,7 +254,7 @@ router.post('/companyopentransaction', function (req, res, next) {
     if (error) { return next(error) };
     Teacher.findById(req.body.teacher).exec(function (error, teacher) {
       if (error) throw error;
-      tr.OpenTransaction.create({
+      Transaction.create({
           date_requested: new Date(),
           amount: req.body.transaction_amount,
           from_company: user._id,
@@ -284,13 +293,16 @@ router.get('/logout', function (req, res, next) {
   }
 });
 
-// POST route for deleting transaction
-router.post('/deleteopentransaction', function (req, res, next) {
+
+// POST route for cancelling a transaction request or clearing a rejected one
+router.post('/deletetransaction', function (req, res, next) {
   if (!req.session.teacherId && !req.session.companyId) 
     throw Error("No authorization to delete transaction")
 
-  tr.OpenTransaction.findById(req.body.delete_id).exec(async function (err, trans) {
+  Transaction.findOne({_id: req.body.delete_id, status: {$in: ['open', 'rejected']}}).exec(async function (err, trans) {
     if (err) throw err;
+    if (!trans)
+      throw Error("No such transaction or transaction is not open/rejected!")
     if (!(trans.requester == 'company' && trans.from_company == req.session.companyId) &&
         !(trans.requester == 'teacher' && trans.to_teacher == req.session.teacherId) ) {
       console.log("mislinked transaction:", req.body.delete_id.valueOf());
@@ -299,13 +311,40 @@ router.post('/deleteopentransaction', function (req, res, next) {
     await Company.updateOne({_id: trans.from_company}, { $pullAll: {transaction_ids: [req.body.delete_id]} } ).exec();
     await Teacher.updateOne({_id: trans.to_teacher},   { $pullAll: {transaction_ids: [req.body.delete_id]} } ).exec();
     
-    await OpenTransaction.deleteOne({ _id: req.body.delete_id}).exec();
+    await Transaction.deleteOne({ _id: req.body.delete_id}).exec();
   });
 
   if (req.session.teacherId) return res.redirect('/teacherdashboard');
   else if (req.session.companyId) return res.redirect('/companydashboard');
 });
 
+
+// POST route for approving or rejecting an open request
+router.post('/approveorrejectopentransaction', function (req, res, next) {
+  if (!req.session.teacherId && !req.session.companyId) 
+    throw Error("No authorization to approve/reject transaction")
+
+  Transaction.findOne({_id: req.body.modify_id, status: 'open'}).exec(async function (err, trans) {
+    if (err) throw err;
+    if (!trans)
+      throw Error("No such transaction or transaction is not open!")
+    if (!(trans.requester == 'teacher' && trans.from_company == req.session.companyId) &&
+        !(trans.requester == 'company' && trans.to_teacher == req.session.teacherId) ) {
+      console.log("mislinked transaction modification:", req.body.modify_id.valueOf());
+      throw Error('No authorized parties present on this transaction')
+    }
+    if (req.body.req_action == 'Approve request') {
+      await Transaction.updateOne({ _id: req.body.modify_id}, {status: 'approved'}).exec();
+    }
+    else if (req.body.req_action == 'Reject request')
+      await Transaction.updateOne({ _id: req.body.modify_id}, {status: 'rejected'}).exec();
+    else
+      return res.send(`Request action \'${req.body.req_action}\' was improper.`)
+  });
+
+  if (req.session.teacherId) return res.redirect('/teacherdashboard');
+  else if (req.session.companyId) return res.redirect('/companydashboard');
+});
 
 
 module.exports = router;

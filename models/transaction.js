@@ -27,7 +27,7 @@ var TransactionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['open', 'approved', 'completed'],
+    enum: ['open', 'approved', 'rejected', 'completed'],
     required: true
   },
   requester: {
@@ -41,6 +41,7 @@ var TransactionSchema = new mongoose.Schema({
 });
 
 
-exports.OpenTransaction = mongoose.model('OpenTransaction', TransactionSchema);
-exports.ApprovedTransaction = mongoose.model('ApprovedTransaction', TransactionSchema);
-exports.CompletedTransaction = mongoose.model('CompletedTransaction', TransactionSchema);
+module.exports = mongoose.model('Transaction', TransactionSchema);
+// exports.OpenTransaction = mongoose.model('OpenTransaction', TransactionSchema);
+// exports.ApprovedTransaction = mongoose.model('ApprovedTransaction', TransactionSchema);
+// exports.CompletedTransaction = mongoose.model('CompletedTransaction', TransactionSchema);

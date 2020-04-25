@@ -13,7 +13,7 @@
 
 	<!-- Start a request -->
 	<form action="/companyopentransaction" method="post">
-		<input type="text" name="transaction_amount" placeholder="Transaction Amount" required="">
+		<input type="number" name="transaction_amount" placeholder="Transaction Amount" required="" min="0">
 		<label for="teacher"> Sponsor (<%= teacher_names.length %>):</label>
 		<select id="teacher" name="teacher">
 		<% for (var i=0; i < teacher_names.length; i++ ) { %>
@@ -26,21 +26,43 @@
 	</form>
 
 	<div>
+		<% var type = 'company'; %>
 		<h3>Open Transactions (<%=open_transactions.length%>)</h3>
 		<% for (var i=0; i < open_transactions.length; i++ ) { %>
 			<% var ot = open_transactions[i]; %>
-			<span>[<%=i%>] Date Requested: <%=ot.date_requested.toString()%> --> From: <%=ot.company_name%>. To: <%=ot.teacher_name%>. Amount: <%=ot.amount%></span>
-			<% if (ot.requester == 'company') { %>
-				<form action="/deleteopentransaction" method="post" style="display:inline!important">
+			<span>[<%=i+1%>] Date Requested: <%=ot.date_requested.toString()%> --> Sponsor: <%=ot.company_name%>. Recipient: <%=ot.teacher_name%>. Amount: $<%=ot.amount%></span>
+			<% if (ot.requester == type) { %>
+				<form action="/deletetransaction" method="post" style="display:inline!important">
 					<input type="hidden" name="delete_id" value=<%=ot._id%>>
 					<input type="submit" value="Cancel request" style="color:red"> 
 				</form>
 			<% } else { %>
-				<form action="/approveopentransaction" method="post" style="display:inline!important">
-					<input type="hidden" name="approve_id" value=<%=ot._id%>>
-					<input type="submit" value="Approve request" style="color:green"> 
+				<form action="/approveorrejectopentransaction" method="post" style="display:inline!important">
+					<input type="hidden" name="modify_id" value=<%=ot._id%>>
+					<input type="submit" name="req_action" value="Approve request" style="color:green"> 
+					<input type="submit" name="req_action" value="Reject request" style="color:red"> 
 				</form>
 			<% } %>
+			<br>
+		<% } %>
+		<h3>Rejected Transaction Inbox</h3>
+		<% var j = 0; %>
+		<% for (var i=0; i < rejected_transactions.length; i++ ) { %>
+			<% var t = rejected_transactions[i]; j+=1; %>
+			<% if (t.requester == type) { %>
+				<span>[<%=j%>] Date Requested: <%=t.date_requested.toString()%> --> From: <%=t.company_name%>. To: <%=t.teacher_name%>. Amount: $<%=t.amount%></span>
+				<form action="/deletetransaction" method="post" style="display:inline!important">
+					<input type="hidden" name="delete_id" value=<%=t._id%>>
+					<input type="submit" value="Clear Rejected Request" style="color:red"> 
+				</form>
+			<% } %>
+			<br>
+		<% } %>
+		<h3>Approved Transaction Inbox</h3>
+		<% j = 0; %>
+		<% for (var i=0; i < approved_transactions.length; i++ ) { %>
+			<% var t = approved_transactions[i]; j+=1; %>
+			<span>[<%=j%>] Date Requested: <%=t.date_requested.toString()%> --> From: <%=t.company_name%>. To: <%=t.teacher_name%>. Amount: $<%=t.amount%></span>
 			<br>
 		<% } %>
 	</div>
