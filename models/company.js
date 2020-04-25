@@ -2,14 +2,11 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt');
 var SALT_WORK_FACTOR = 10;
 
-var TeacherSchema = new mongoose.Schema({
-  first: {
+var CompanySchema = new mongoose.Schema({
+  name: {
     type: String,
-    required: true
-  },
-  last: {
-    type: String,
-    required: true
+    required: true,
+    unique: true,
   },
   email: {
     type: String,
@@ -31,7 +28,7 @@ var TeacherSchema = new mongoose.Schema({
 });
 
 //hashing a password before saving it to the database
-TeacherSchema.pre('save', function (next) {
+CompanySchema.pre('save', function (next) {
   var user = this;
 
   if (!user.isModified('password')) return next();
@@ -51,7 +48,7 @@ TeacherSchema.pre('save', function (next) {
   });
 });
 
-TeacherSchema.methods.comparePassword = function(candidatePassword, cb) {
+CompanySchema.methods.comparePassword = function(candidatePassword, cb) {
     bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
         if (err) return cb(err);
         cb(null, isMatch);
@@ -59,11 +56,11 @@ TeacherSchema.methods.comparePassword = function(candidatePassword, cb) {
 };
 
 //authenticate input against database
-TeacherSchema.methods.authenticate = function (email, password, callback) {
+CompanySchema.methods.authenticate = function (email, password, callback) {
   this.model.findOne({ email: email })
 
 }
 
 
-var Teacher = mongoose.model('Teacher', TeacherSchema);
-module.exports = Teacher;
+var Company = mongoose.model('Company', CompanySchema);
+module.exports = Company;

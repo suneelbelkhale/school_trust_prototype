@@ -2,11 +2,16 @@ var express = require('express');
 var mongoose = require('mongoose');
 var router = express.Router();
 var Teacher = require('../models/teacher');
+var Company = require('../models/company');
+var tr = require('../models/transaction');
 
 
 router.get('/', (req, res) => {
   return res.render('index', {session: req.session});
 });
+
+
+//////////////////////////////////////////////////////////////
 
 // GET route for reading data
 router.get('/teacherreglog', function (req, res, next) {
@@ -39,7 +44,7 @@ router.post('/teacherreglog', function (req, res, next) {
       if (err) {
         return next(err);
       } else {
-        console.log('USER CREATED:', tData);
+        console.log('TEACHER CREATED:', tData);
         req.session.teacherId = tData._id.valueOf()
         return res.redirect('/teacherdashboard');
       }
@@ -49,19 +54,17 @@ router.post('/teacherreglog', function (req, res, next) {
 
     // fetch user and test password verification
     Teacher.findOne({ email: req.body.logemail }, function(err, user) {
-        if (err) {
-          var err = new Erorr('Wrong email.'); // TODO make this ambiguous
-          err.status = 401;
-          throw err
+        if (err) throw err;
+
+        // wrong email
+        if (user == null) {
+          req.session.failedLogin = true;
+          return res.redirect('/teacherreglog');          
         }
 
         // test a matching password
         user.comparePassword(req.body.logpassword, function(err, isMatch) {
-            if (err) {
-              var err = new Error('Wrong password.'); // TODO make this ambiguous
-              err.status = 401;
-              throw err
-            }
+            if (err) throw err;
 
             if (!isMatch) {
               req.session.failedLogin = true;
@@ -69,7 +72,7 @@ router.post('/teacherreglog', function (req, res, next) {
               return res.redirect('/teacherreglog');
             }
             // SUCCESS
-            console.log('SUCCESSFUL LOGIN, ID:', user._id.valueOf());
+            console.log('SUCCESSFUL TEACHER LOGIN, ID:', user._id.valueOf());
             req.session.teacherId = user._id.valueOf();
             return res.redirect('/teacherdashboard');
         });
@@ -84,18 +87,190 @@ router.post('/teacherreglog', function (req, res, next) {
 
 // GET route after registering
 router.get('/teacherdashboard', function (req, res, next) {
-  req.session.failedLogin = false; // shouldnt be necessary but just in case
   Teacher.findById(req.session.teacherId)
     .exec(function (error, user) {
       if (error) {
         return next(error);
       } else {
-        return res.render('teacherdash', {teacher: user})
+        Company.find({}).exec(async function (err, docs) {
+          if (err) throw err;
+          var cnames = docs.map((company, idx, arr) => company.name)
+          cnames.sort()
+
+          var opent = await tr.OpenTransaction.find().where('_id').in(user.transaction_ids).exec();
+          var apprt = await tr.ApprovedTransaction.find().where('_id').in(user.transaction_ids).exec();
+          var compt = await tr.CompletedTransaction.find().where('_id').in(user.transaction_ids).exec();
+
+          return res.render('teacherdash', {teacher: user, 
+            company_names: cnames, 
+            open_transactions: opent,
+            approved_transactions: apprt,
+            completed_transactions: compt})
+        });
       }
     });
 });
 
-// GET for logout logout
+// POST route for creating transaction
+router.post('/teacheropentransaction', function (req, res, next) {
+  Teacher.findById(req.session.teacherId).exec(function (error, user) {
+    if (error) { return next(error) };
+    Company.findOne({'name': req.body.company}).exec(function (error, company) {
+      if (error) throw error;
+      tr.OpenTransaction.create({
+          date_requested: new Date(),
+          amount: req.body.transaction_amount,
+          from_company: company._id,
+          company_name: req.body.company,
+          to_teacher: req.session.teacherId,
+          teacher_name: user.first + " " + user.last,
+          intended_for: req.body.intended_for,
+          status: 'open',
+          requester: 'teacher'
+      }, (err, transaction) => {
+        if (err) throw err;
+        console.log("Open transaction created:", transaction._id.valueOf());
+        user.transaction_ids.push(transaction._id);
+        company.transaction_ids.push(transaction._id);
+        user.save(function (err, post) { if (err) throw err; });
+        company.save(function (err, post) { if (err) throw err; });
+      });
+      return res.redirect('/teacherdashboard');
+    });
+  });
+});
+
+
+//////////////////////////////////////////////////////////////
+
+// GET route for reading data
+router.get('/companyreglog', function (req, res, next) {
+  return res.render('companyreglog', {session: req.session});
+});
+
+//POST route for updating data
+router.post('/companyreglog', function (req, res, next) {
+  // confirm that user typed same password twice
+  if (req.body.password !== req.body.passwordConf) {
+    var err = new Error('Passwords do not match.');
+    err.status = 400;
+    res.send("passwords dont match");
+    return next(err);
+  }
+  if (req.body.email && req.body.name &&
+    req.body.username && req.body.password &&
+    req.body.passwordConf) {  
+
+    // create new user
+    var cData = new Company({
+      name: req.body.name,
+      email: req.body.email,
+      username: req.body.username,
+      password: req.body.password,
+    });
+
+    cData.save(function (err) {
+      if (err) {
+        return next(err);
+      } else {
+        console.log('SPONSOR CREATED:', cData);
+        req.session.companyId = cData._id.valueOf()
+        return res.redirect('/companydashboard');
+      }
+    });
+
+  } else if (req.body.logemail && req.body.logpassword) {
+
+    // fetch user and test password verification
+    Company.findOne({ email: req.body.logemail }, function(err, user) {
+        if (err) throw err;
+
+        // wrong email
+        if (user == null) {
+          req.session.failedLogin = true;
+          return res.redirect('/companyreglog');          
+        }
+
+        // test a matching password
+        user.comparePassword(req.body.logpassword, function(err, isMatch) {
+            if (err) throw err;
+
+            if (!isMatch) {
+              req.session.failedLogin = true;
+              console.log('Wrong password:', user.password)
+              return res.redirect('/companyreglog');
+            }
+            // SUCCESS
+            console.log('SUCCESSFUL SPONSOR LOGIN, ID:', user._id.valueOf());
+            req.session.companyId = user._id.valueOf();
+            return res.redirect('/companydashboard');
+        });
+
+    });
+  } else {
+    var err = new Error('All fields required.');
+    err.status = 400;
+    return next(err);
+  }
+})
+
+// GET route after registering
+router.get('/companydashboard', function (req, res, next) {
+  Company.findById(req.session.companyId)
+    .exec(function (error, user) {
+      if (error) {
+        return next(error);
+      } else {
+        Teacher.find({}).exec(async function (err, docs) {
+          if (err) throw err;
+          var tnames = docs.map((teacher, idx, arr) => { return {'name': teacher.first + " " + teacher.last, 'id': teacher._id} });
+          tnames.sort((a, b) => a.name < b.name);
+          var opent = await tr.OpenTransaction.find().where('_id').in(user.transaction_ids).exec();
+          var apprt = await tr.ApprovedTransaction.find().where('_id').in(user.transaction_ids).exec();
+          var compt = await tr.CompletedTransaction.find().where('_id').in(user.transaction_ids).exec();
+
+          return res.render('companydash', {company: user, 
+            teacher_names: tnames, 
+            open_transactions: opent,
+            approved_transactions: apprt,
+            completed_transactions: compt})
+        });
+      }
+    });
+});
+
+// POST route for creating transaction
+router.post('/companyopentransaction', function (req, res, next) {
+  Company.findById(req.session.companyId).exec(function (error, user) {
+    if (error) { return next(error) };
+    Teacher.findById(req.body.teacher).exec(function (error, teacher) {
+      if (error) throw error;
+      tr.OpenTransaction.create({
+          date_requested: new Date(),
+          amount: req.body.transaction_amount,
+          from_company: user._id,
+          company_name: user.name,
+          to_teacher: teacher._id,
+          teacher_name: teacher.first + " " + teacher.last,
+          status: 'open',
+          requester: 'company'
+      }, (err, transaction) => {
+        if (err) throw err;
+        console.log("Open transaction created:", transaction._id.valueOf());
+        user.transaction_ids.push(transaction._id);
+        teacher.transaction_ids.push(transaction._id);
+        user.save(function (err, post) { if (err) throw err; });
+        teacher.save(function (err, post) { if (err) throw err; });
+      });
+      return res.redirect('/companydashboard');
+    });
+  });
+});
+
+
+/////////////////////////////////////////////////////
+
+// GET for logout
 router.get('/logout', function (req, res, next) {
   if (req.session) {
     // delete session object
@@ -108,5 +283,29 @@ router.get('/logout', function (req, res, next) {
     });
   }
 });
+
+// POST route for deleting transaction
+router.post('/deleteopentransaction', function (req, res, next) {
+  if (!req.session.teacherId && !req.session.companyId) 
+    throw Error("No authorization to delete transaction")
+
+  tr.OpenTransaction.findById(req.body.delete_id).exec(async function (err, trans) {
+    if (err) throw err;
+    if (!(trans.requester == 'company' && trans.from_company == req.session.companyId) &&
+        !(trans.requester == 'teacher' && trans.to_teacher == req.session.teacherId) ) {
+      console.log("mislinked transaction:", req.body.delete_id.valueOf());
+      throw Error('No authorized parties present on this transaction')
+    }
+    await Company.updateOne({_id: trans.from_company}, { $pullAll: {transaction_ids: [req.body.delete_id]} } ).exec();
+    await Teacher.updateOne({_id: trans.to_teacher},   { $pullAll: {transaction_ids: [req.body.delete_id]} } ).exec();
+    
+    await OpenTransaction.deleteOne({ _id: req.body.delete_id}).exec();
+  });
+
+  if (req.session.teacherId) return res.redirect('/teacherdashboard');
+  else if (req.session.companyId) return res.redirect('/companydashboard');
+});
+
+
 
 module.exports = router;

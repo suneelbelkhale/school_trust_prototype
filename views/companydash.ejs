@@ -1,27 +1,24 @@
 <html>
 
-<% if (teacher) { %>
+<% if (company) { %>
 
 <head>
-	<h1> Teacher Dashboard </h1>
-	<h3><strong>Name: </strong><%= teacher.first %> <%= teacher.last %></h3>
-	<h3><strong>Email: </strong><%= teacher.email %></h3>
+	<h1> Company Dashboard </h1>
+	<h3><strong>Name: </strong><%= company.name %></h3>
+	<h3><strong>Email: </strong><%= company.email %></h3>
 </head>
 <body>
 	<a href="/">Home</a><br>
 	<a href="/logout">Log out</a>
 
 	<!-- Start a request -->
-	<form action="/teacheropentransaction" method="post">
+	<form action="/companyopentransaction" method="post">
 		<input type="text" name="transaction_amount" placeholder="Transaction Amount" required="">
-		<input type="text" name="intended_for" placeholder="Intended Usage" required="">
-		<label for="company"> Sponsor (<%= company_names.length %>):</label>
-		<select id="company" name="company">
-		<!-- <script type="text/javascript"> -->
-		<% for (var i=0; i<= company_names.length; i++ ) { %>
-			<option value=<%= company_names[i] %>><%= company_names[i] %></option>
+		<label for="teacher"> Sponsor (<%= teacher_names.length %>):</label>
+		<select id="teacher" name="teacher">
+		<% for (var i=0; i < teacher_names.length; i++ ) { %>
+			<option value=<%= teacher_names[i].id %>><%= teacher_names[i].name %></option>
 		<% } %>
-		<!-- </script> -->
 		</select>
 		<div>
 			<input type="submit" value="Send request">
@@ -33,7 +30,7 @@
 		<% for (var i=0; i < open_transactions.length; i++ ) { %>
 			<% var ot = open_transactions[i]; %>
 			<span>[<%=i%>] Date Requested: <%=ot.date_requested.toString()%> --> From: <%=ot.company_name%>. To: <%=ot.teacher_name%>. Amount: <%=ot.amount%></span>
-			<% if (ot.requester == 'teacher') { %>
+			<% if (ot.requester == 'company') { %>
 				<form action="/deleteopentransaction" method="post" style="display:inline!important">
 					<input type="hidden" name="delete_id" value=<%=ot._id%>>
 					<input type="submit" value="Cancel request" style="color:red"> 
@@ -47,7 +44,6 @@
 			<br>
 		<% } %>
 	</div>
-	
 
 </body>
 
@@ -56,7 +52,7 @@
 <head>
 	<h1>You are not logged in.</h1>
 	<a href="/">Home</a><br>
-	<a href="/teacherreglog">Teacher Login</a>
+	<a href="/companyreglog">Company Login</a>
 </head>
 
 <% } %>

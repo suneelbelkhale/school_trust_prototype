@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Teacher Register & Login Page</title>
+<title>Company Register & Login Page</title>
 <!--Custom Theme files-->
 <script type="application/x-javascript"> addEventListener("load", function() { setTimeout(hideURLbar, 0); }, false); function hideURLbar(){ window.scrollTo(0,1); } </script>
 
@@ -9,17 +9,17 @@
 
 <body>
 
-<% if (session.teacherId) { %>
-
-	<h1> You are already logged in as a teacher! </h1>
-	<a href="/"> Landing Page </a><br>
-	<a href=/teacherdashboard/> Dashboard </a>
-
-<% } else if (session.companyId) { %>
+<%  if (session.companyId) { %>
 
 	<h1> You are already logged in as a company! </h1>
 	<a href="/"> Landing Page </a><br>
 	<a href=/companydashboard/> Dashboard </a>
+
+<% } else if (session.teacherId) { %>
+
+	<h1> You are already logged in as a teacher! </h1>
+	<a href="/"> Landing Page </a><br>
+	<a href=/teacherdashboard/> Dashboard </a>
 
 <% } else { %>
 
@@ -29,13 +29,13 @@
 
 	<% } %>
 
-	<h1>Teacher Authentication 🚀 </h1>
+	<h1>Company Authentication 🚀 </h1>
 	<!-- main -->
 	<div class="main">
 		<h3>Login</h3>
 		
 		<div class="login-form">
-			<form action="/teacherreglog" method="post">
+			<form action="/companyreglog" method="post">
 				<input type="text" name="logemail" placeholder="E-mail" required="">
 				<input type="password" name="logpassword" placeholder="Password" required="">
 				<div>
@@ -47,9 +47,8 @@
 		<h3>Register</h3>
 		
 		<div class="login-form">
-			<form id="login" action="/teacherreglog" method="post" onsubmit="event.preventDefault(); validateMyForm();">
-				<input type="text" name="first" placeholder="First Name" required="">
-				<input type="text" name="last" placeholder="Last Name" required="">
+			<form id="login" action="/companyreglog" method="post" onsubmit="event.preventDefault(); validateMyForm();">
+				<input type="text" name="name" placeholder="Company Name" required="">
 				<input type="text" name="email" placeholder="E-mail" required="">
 				<input type="text" name="username" placeholder="Username" required="">
 				<input type="password" name="password" placeholder="Password" id="password" required="" >
