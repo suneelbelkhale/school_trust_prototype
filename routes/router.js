@@ -15,7 +15,10 @@ router.get('/', (req, res) => {
 
 // GET route for reading data
 router.get('/teacherreglog', function (req, res, next) {
-  return res.render('teacherreglog', {session: req.session});
+  return res.render('teacherreglog', {session: req.session}, function(err, html) {
+    req.session.failedLogin = false; // resets post render
+    res.send(html);
+  });
 });
 
 //POST route for updating data
@@ -148,7 +151,10 @@ router.post('/teacheropentransaction', function (req, res, next) {
 
 // GET route for reading data
 router.get('/companyreglog', function (req, res, next) {
-  return res.render('companyreglog', {session: req.session});
+  return res.render('companyreglog', {session: req.session}, function(err, html) {
+    req.session.failedLogin = false; // resets post render
+    res.send(html);
+  });
 });
 
 //POST route for updating data

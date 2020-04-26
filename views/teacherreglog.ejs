@@ -3,25 +3,38 @@
 <head>
 <title>Teacher Register & Login Page</title>
 <!--Custom Theme files-->
-<script type="application/x-javascript"> addEventListener("load", function() { setTimeout(hideURLbar, 0); }, false); function hideURLbar(){ window.scrollTo(0,1); } </script>
+	<link rel="stylesheet" href="static/skeleton/css/normalize.css">
+	<link rel="stylesheet" href="static/skeleton/css/skeleton.css">
 
+	<div class="container">
+
+<% if (session.teacherId) { %>
+
+		<h1> You are already logged in as a teacher! </h1>
+		<a class="button" href="/"> Home </a><br>
+		<a class="button" href=/teacherdashboard/> Dashboard </a>
+	</div>
+</head>
+
+<% } else if (session.companyId) { %>
+
+		<h1> You are already logged in as a company! </h1>
+		<a class="button" href="/"> Home </a><br>
+		<a class="button" href=/companydashboard/> Dashboard </a>
+	</div>
+</head>
+
+<% } else { %>
+		
+		<h1>Teacher Authentication 🚀 </h1>
+		<a class="button" href="/"> Home </a><br>
+
+	</div>
 </head>
 
 <body>
 
-<% if (session.teacherId) { %>
-
-	<h1> You are already logged in as a teacher! </h1>
-	<a href="/"> Landing Page </a><br>
-	<a href=/teacherdashboard/> Dashboard </a>
-
-<% } else if (session.companyId) { %>
-
-	<h1> You are already logged in as a company! </h1>
-	<a href="/"> Landing Page </a><br>
-	<a href=/companydashboard/> Dashboard </a>
-
-<% } else { %>
+<div class="container">
 
 	<% if (session.failedLogin) { %>
 
@@ -29,40 +42,54 @@
 
 	<% } %>
 
-	<h1>Teacher Authentication 🚀 </h1>
-	<!-- main -->
-	<div class="main">
-		<h3>Login</h3>
-		
-		<div class="login-form">
-			<form action="/teacherreglog" method="post">
-				<input type="text" name="logemail" placeholder="E-mail" required="">
-				<input type="password" name="logpassword" placeholder="Password" required="">
-				<div>
-					<input type="submit" value="LOGIN NOW">
-				</div>
-			</form>
-		</div>
-
-		<h3>Register</h3>
-
-		
-		<div class="login-form">
-			<form id="login" action="/teacherreglog" method="post" onsubmit="event.preventDefault(); validateMyForm();">
-				<input type="text" name="first" placeholder="First Name" required="">
-				<input type="text" name="last" placeholder="Last Name" required="">
-				<input type="text" name="email" placeholder="E-mail" required="">
-				<input type="text" name="username" placeholder="Username" required="">
-				<input type="password" name="password" placeholder="Password" id="password" required="" >
-				<input type="password" name="passwordConf" placeholder="Confirm Password" id="password_conf" required="">
-				<div>
-					<input type="submit" value="REGISTER & LOGIN">
-				</div>
-			</form>
-		</div>
-		<p><a href="#"> By clicking register, I agree to your terms</a></p>
-
+	<h3>Login</h3>
+	
+	<div class="row login-form">
+		<form action="/teacherreglog" method="post">
+			<div class="three columns">
+				<input class="u-fill-width" type="text" name="logemail" placeholder="E-mail" required="">
+			</div>
+			<div class="three columns">
+				<input class="u-fill-width" type="password" name="logpassword" placeholder="Password" required="">
+			</div>
+			<div class="three columns">
+				<input class="u-fill-width button button-primary" type="submit" value="LOGIN NOW">
+			</div>
+		</form>
 	</div>
+
+	<h3>Register</h3>
+
+	
+	<div class="register-form">
+		<form id="login" action="/teacherreglog" method="post" onsubmit="event.preventDefault(); validateMyForm();">
+			<div class="row">
+				<div class="four columns">
+					<input class="u-full-width" type="text" name="first" placeholder="First Name" required="">
+				</div>
+				<div class="four columns">
+					<input class="u-full-width" type="text" name="last" placeholder="Last Name" required="">
+				</div>
+			</div>
+			<div class="row">
+				<div class="four columns">
+					<input class="u-full-width" type="text" name="email" placeholder="E-mail" required="">
+				</div>
+				<div class="four columns">
+					<input class="u-full-width" type="text" name="username" placeholder="Username" required="">
+				</div>
+			</div>
+			<div class="row">
+				<input class="four columns" type="password" name="password" placeholder="Password" id="password" required="" >
+				<input class="four columns" type="password" name="passwordConf" placeholder="Confirm Password" id="password_conf" required="">
+			</div> <br>
+			<div class="row">
+				<input class="button button-primary" type="submit" value="REGISTER & LOGIN">
+			</div>
+		</form>
+	</div>
+	<p><a href="#"> By clicking register, I agree to your terms</a></p>
+
 
 	<script type="text/javascript">
 		var passWordField = document.getElementById('password')
@@ -77,8 +104,10 @@
 		}
 	</script>	
 
+</div>
+
+</body>
 
 <% } %>
 
-</body>
 </html>

@@ -2,10 +2,14 @@
 <!-- requires: session, recipient_name -->
 
 <head>
-	<h1> Payment to <%= recipient_name %> Successful! </h1>
+	<link rel="stylesheet" href="static/skeleton/css/normalize.css">
+	<link rel="stylesheet" href="static/skeleton/css/skeleton.css">
+	<div class='container'>
+		<h1> Your payment to <strong><%= recipient_name %></strong> was successful! </h1><br>
+		<a class="button button-primary" href="/">Return to Start Page</a>
+	</div>
 </head>
 
 <body>
-<a href="/">Return to Start Page</a>
 </body>
 </html>

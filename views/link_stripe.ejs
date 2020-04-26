@@ -2,16 +2,33 @@
 <!-- requires: session, user_email -->
 
 <head>
-	<h1> Link Stripe Account. </h1>
+	<link rel="stylesheet" href="static/skeleton/css/normalize.css">
+	<link rel="stylesheet" href="static/skeleton/css/skeleton.css">
+	<div class="container">
+		<h1> Link Stripe Account. </h1>
+	</div>
 </head>
 
 <body>
+
+<div class="container">
 <% var who = null; %>
 <% if (!session.teacherId && !session.companyId) {%>
-<p>Not Logged In.</p>
+		<p>Not Logged In!</p>
 <% } else if (session.teacherId) { who = 'teacher'; %>
 <% } else if (session.companyId) { who = 'company'; %>
 <% } %>
-<h4><a href="https://connect.stripe.com/oauth/authorize?response_type=code&client_id=<%=process.env.STRIPE_CLIENT_ID%>&scope=read_write&stripe_user[email]=<%=user_email%>">Connect to Stripe</a></h4>
+	
+	<div class="row">
+		<div class="four columns">
+			<a class="u-full-width button" href="/">Return to Start Page</a>
+		</div>
+		<div class="four columns">
+			<a class="u-full-width button button-primary" href="https://connect.stripe.com/oauth/authorize?response_type=code&client_id=<%=process.env.STRIPE_CLIENT_ID%>&scope=read_write&stripe_user[email]=<%=user_email%>">Connect to Stripe</a>
+		</div>
+	</div>
+
+</div>
+
 </body>
 </html>
