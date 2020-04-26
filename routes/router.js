@@ -4,7 +4,7 @@ var router = express.Router();
 var Teacher = require('../models/teacher');
 var Company = require('../models/company');
 var Transaction = require('../models/transaction');
-
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 router.get('/', (req, res) => {
   return res.render('index', {session: req.session});
@@ -346,5 +346,130 @@ router.post('/approveorrejectopentransaction', function (req, res, next) {
   else if (req.session.companyId) return res.redirect('/companydashboard');
 });
 
+router.post('/makepayment', function (req, res, next) {
+  if (!req.session.companyId)
+    throw Error("No authorization to approve/reject transaction")
+
+  Transaction.findById(req.body.transaction_id, async function (error, trans) {
+    if (error) return next(error)
+    if (!trans) return next(new Error('No transaction found'));
+    // TODO do more checks here
+    if (trans.from_company != req.session.companyId) 
+      return next(new Error('Unauthorized to pay for this transaction.'))
+
+    return res.render('payment', {session: req.session, transaction: trans, STRIPE_PUB_KEY: process.env.STRIPE_PUB_KEY});
+  });
+});
+
+/////////////////////////////////////////////////////
+//STRIPE STUFF
+
+router.get('/linkstripeaccount', async function(req, res, next) {
+  var user = null;
+  if (req.session.teacherId) {
+    user = await Teacher.findById(req.session.teacherId).exec()
+  } else if (req.session.companyId) {
+    user = await Company.findById(req.session.companyId).exec()
+  } else {
+    return next(new Error('No authorization'));
+  }
+
+  if (user.stripe_account_id) {
+    return res.send('This user already has an account linked. <a href=/unlinkstripeaccount>Unlink</a>')
+  }
+
+  return res.render('link_stripe', {session: req.session, user_email: user.email});
+});
+
+
+router.get('/unlinkstripeaccount', async function(req, res, next) {
+  var user = null;
+  if (req.session.teacherId) {
+    user = await Teacher.findById(req.session.teacherId).exec()
+  } else if (req.session.companyId) {
+    user = await Company.findById(req.session.companyId).exec()
+  } else {
+    return next(new Error('No authorization'));
+  }
+
+  if (!user.stripe_account_id) {
+    return res.send('This user has no account linked. <a href=/linkstripeaccount>Link</a>')
+  }
+  
+  const response = await stripe.oauth.deauthorize({
+    client_id: process.env.STRIPE_CLIENT_ID,
+    stripe_user_id: user.stripe_account_id,
+  });
+  user.stripe_account_id = null;
+  await user.save();
+  return res.send('Account has been unlinked. <a href=/>Home</a>')
+});
+
+
+router.get('/addstripeaccount', async function (req, res, next) {
+
+  if (!req.session.teacherId && !req.session.companyId) 
+    return next(new Error("No authorization to add account"));
+
+  var who = req.session.teacherId === null ? 'company' : 'teacher';
+
+  if (req.query.error) {
+    console.log("Did not add account.");
+    return res.send(`Unable to link account for ${who}`);
+  }
+  
+  const response = await stripe.oauth.token({
+    grant_type: 'authorization_code',
+    code: req.query.code
+  });
+
+  if (response.error) return next(response.error);
+
+  console.log('User linked', response.stripe_user_id)
+
+  if (who == 'teacher') { 
+    await Teacher.updateOne({_id: req.session.teacherId}, {stripe_account_id: response.stripe_user_id}).exec();
+    return res.redirect('/teacherdashboard')
+  }
+  else { 
+    await Company.updateOne({_id: req.session.companyId}, {stripe_account_id: response.stripe_user_id}).exec();
+    return res.redirect('/companydashboard')
+  }
+});
+
+
+router.post('/checkout', (req, res, next) => {
+  Transaction.findById(req.body.transaction_id, function (error, trans) {
+    if (error) return next(error)
+    if (!trans) return next(new Error('No transaction found'));
+      // TODO do more checks here
+    Teacher.findById(trans.to_teacher, (error, teacher) => {
+      if (error) return next(error)
+      if (!teacher) return next(new Error('No transaction found'));
+      if (trans.status != 'approved') return next(new Error('Transaction not yet approved!'));
+      if (teacher.stripe_account_id == null)
+        return res.send('Recipient does not have a connected Stripe account.');
+      var charge = stripe.charges.create({
+          amount: trans.amount*100, // in cents
+          currency: 'usd',
+          source: req.body.stripeToken,
+          description: `Payment from ${trans.company_name} to ${trans.teacher_name}`,
+          application_fee: 0,
+        },
+        {stripeAccount: teacher.stripe_account_id},
+        async function(error, charge) {
+          if (error) return next(error)
+
+          // update transaction to reflect completion
+          trans.status = 'completed';
+          trans.date_completed = new Date()
+          await trans.save()
+
+          return res.render('success', {session: req.session, recipient_name: trans.teacher_name})
+        }
+      );
+    });
+  });
+});
 
 module.exports = router;

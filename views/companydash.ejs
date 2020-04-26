@@ -9,7 +9,8 @@
 </head>
 <body>
 	<a href="/">Home</a><br>
-	<a href="/logout">Log out</a>
+	<a href="/logout">Log out</a><br>
+	<a href="/linkstripeaccount">Link Stripe</a>
 
 	<!-- Start a request -->
 	<form action="/companyopentransaction" method="post">
@@ -48,8 +49,9 @@
 		<h3>Rejected Transaction Inbox</h3>
 		<% var j = 0; %>
 		<% for (var i=0; i < rejected_transactions.length; i++ ) { %>
-			<% var t = rejected_transactions[i]; j+=1; %>
+			<% var t = rejected_transactions[i]; %>
 			<% if (t.requester == type) { %>
+				<% j+= 1; %>
 				<span>[<%=j%>] Date Requested: <%=t.date_requested.toString()%> --> From: <%=t.company_name%>. To: <%=t.teacher_name%>. Amount: $<%=t.amount%></span>
 				<form action="/deletetransaction" method="post" style="display:inline!important">
 					<input type="hidden" name="delete_id" value=<%=t._id%>>
@@ -61,7 +63,20 @@
 		<h3>Approved Transaction Inbox</h3>
 		<% j = 0; %>
 		<% for (var i=0; i < approved_transactions.length; i++ ) { %>
-			<% var t = approved_transactions[i]; j+=1; %>
+			<% var t = approved_transactions[i]; %>
+			<% j+= 1; %>
+			<span>[<%=j%>] Date Requested: <%=t.date_requested.toString()%> --> From: <%=t.company_name%>. To: <%=t.teacher_name%>. Amount: $<%=t.amount%></span>
+			<form action="/makepayment" method="post" style="display:inline!important">
+					<input type="hidden" name="transaction_id" value=<%=t._id%>>
+					<input type="submit" value="Make Payment" style="color:blue"> 
+			</form>
+			<br>
+		<% } %>
+		<h3>Completed Transactions </h3>
+		<% j = 0; %>
+		<% for (var i=0; i < completed_transactions.length; i++ ) { %>
+			<% var t = completed_transactions[i]; %>
+			<% j+= 1; %>
 			<span>[<%=j%>] Date Requested: <%=t.date_requested.toString()%> --> From: <%=t.company_name%>. To: <%=t.teacher_name%>. Amount: $<%=t.amount%></span>
 			<br>
 		<% } %>

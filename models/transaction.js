@@ -35,8 +35,9 @@ var TransactionSchema = new mongoose.Schema({
     enum: ['company', 'teacher'],
     required: true
   },
-  date_submitted: Date,
+  date_completed: Date,
   intended_for: String,
+  date_submitted: Date,
   used_for: String
 });
 

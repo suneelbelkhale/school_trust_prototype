@@ -1,0 +1,25 @@
+<html>
+<!-- requires: session, transaction, STRIPE_PUB_KEY -->
+
+<head>
+	<h1> Make a Payment to <%=transaction.teacher_name%></h1>
+</head>
+
+<body>
+	<h3>Checkout</h3>
+	<form id="payment-form" action="/checkout" method="post">
+	 	<input type="hidden" name="transaction_id" value=<%= transaction._id %>>
+	    <div id="card-element" style="border:1px solid black; background-color: blue ; width:500px"></div>
+	    <div id="card-errors" role="alert"></div>
+	    <button>Submit Payment</button>
+	</form>
+</body>
+
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+	var STRIPE_PUB_KEY = "<%=STRIPE_PUB_KEY%>";
+</script>
+<script src="scripts/payment_script.js"></script>
+
+</html>

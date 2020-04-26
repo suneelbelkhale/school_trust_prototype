@@ -9,8 +9,10 @@ const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+require('dotenv').config({path: __dirname + '/.env'})
 
 const app = express();
+
 
 //connect to MongoDB
 mongoose.connect('mongodb://localhost:27001/mydb');
@@ -48,55 +50,12 @@ var routes = require('./routes/router');
 app.use('/', routes);
 /////////////////////////////////////////////////////////////////////
 
-// app.get('/', (req, res) => {
-//   res.render('index', {args: req.params});
-// });
-
-// app.put('/teacherlogin', (req, res) => {
-// 	if (req.body.email && req.body.first && req.body.last
-// 	  req.body.username && req.body.password &&
-// 	  req.body.passwordConf) {  
-
-// 		var tData = {
-// 	    email: req.body.email,
-// 	    username: req.body.username,
-// 	    password: req.body.password,
-// 	  }  //use schema.create to insert data into the db
-// 	  Teacher.create(tData, function (err, user) {
-// 	    if (err) {
-// 	      return next(err)
-// 	    } else {
-// 	      return res.redirect('/profile');
-// 	    }
-// 	  });
-// 	}
-// });
-
-// app.get('/teacherdashboard/:teacherId', (req, res) => {
-// 	res.render('teacherdash', {args: req.params});
-// });
 
 app.use('/static', express.static('static'))
-
+app.use('/scripts', express.static('scripts'));
 
 app.listen(port, () => {
 	console.log(`Server running at http://${hostname}:${port}/`)
+	console.log('STRIPE SECRET KEY:' + process.env.STRIPE_SECRET_KEY);
 
 });
-
-// MONGO SETUP
-
-// var MongoClient = require('mongodb').MongoClient;
-// var url = "mongodb://localhost:27001/mydb";
-
-// MongoClient.connect(url, function(err, db) {
-//   if (err) throw err;
-//   console.log("Database created!");
-//   var dbo = db.db("schooltrust")
-//   var first = { fname: "Jerry", lname: "Smith", received: 100, target:500 };
-//   dbo.collection("teachers").insertOne(first, function(err, res) {
-//   	if (err) throw err;
-//   	console.log("Inserted Teacher 1.");
-//   	db.close();
-//   });
-// });

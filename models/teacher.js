@@ -27,6 +27,7 @@ var TeacherSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  stripe_account_id: String,
   transaction_ids: [mongoose.Schema.ObjectId]
 });
 

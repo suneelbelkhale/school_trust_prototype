@@ -1,0 +1,17 @@
+<html>
+<!-- requires: session, user_email -->
+
+<head>
+	<h1> Link Stripe Account. </h1>
+</head>
+
+<body>
+<% var who = null; %>
+<% if (!session.teacherId && !session.companyId) {%>
+<p>Not Logged In.</p>
+<% } else if (session.teacherId) { who = 'teacher'; %>
+<% } else if (session.companyId) { who = 'company'; %>
+<% } %>
+<h4><a href="https://connect.stripe.com/oauth/authorize?response_type=code&client_id=<%=process.env.STRIPE_CLIENT_ID%>&scope=read_write&stripe_user[email]=<%=user_email%>">Connect to Stripe</a></h4>
+</body>
+</html>
