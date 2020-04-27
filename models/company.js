@@ -24,6 +24,7 @@ var CompanySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  bio: String,
   stripe_account_id: String,
   transaction_ids: [mongoose.Schema.ObjectId]
 });

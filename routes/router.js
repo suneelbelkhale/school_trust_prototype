@@ -7,9 +7,65 @@ var Transaction = require('../models/transaction');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 router.get('/', (req, res) => {
-  return res.render('index', {session: req.session});
+  Company.find({}).exec(async function (err, docs) {
+    if (err) throw err;
+    var cnames = docs.map((company, idx, arr) => { 
+      return {name: company.name, id: company._id}; 
+    });
+    cnames.sort((a, b) => a.name < b.name);
+    return res.render('index', {session: req.session, company_names: cnames});
+  });
 });
 
+router.post('/set', (req, res, next) => {
+  const type = req.body.type;
+  if (type != 'teacher' && type != 'company')
+    return next(new Error("Invalid type of user for set"));
+  const id = req.body.user_id;
+  const param_name = req.body.param_name;
+  const param_value = req.body.param_value;
+  const incoming_route = req.body.incoming_route;
+
+  if ((type === "teacher" ? req.session.teacherId : req.session.companyId) == id) {
+    (type === "teacher" ? Teacher : Company)
+      .findByIdAndUpdate(id, {[`${param_name}`]: param_value}, function(err, result) {
+      if (err) return next(err);
+      return res.redirect(incoming_route)
+    });
+  }
+});
+
+const client_side_company = function (company) {
+  if (!company) return {invalid: true}
+
+  return {
+    'name': company.name,
+    'email': company.email,
+    'bio': company.bio,
+    'id': company._id,
+  }
+}
+
+const client_side_teacher = function (teacher) {
+  if (!teacher) return {invalid: true}
+
+  return {
+    'first': teacher.first,
+    'last': teacher.last,
+    'name': teacher.first + " " + teacher.last,
+    'email': teacher.email,
+    'id': teacher._id
+  }
+}
+
+const client_side_session = function (session) {
+  if (!session) return {invalid: true}
+
+  return {
+    'teacherId': session.teacherId,
+    'companyId': session.companyId,
+  }
+}
 
 //////////////////////////////////////////////////////////////
 
@@ -106,7 +162,7 @@ router.get('/teacherdashboard', function (req, res, next) {
           var rejet = alltrans.filter((trans, idx, arr) => trans.status == 'rejected');
           var compt = alltrans.filter((trans, idx, arr) => trans.status == 'completed');
 
-          return res.render('teacherdash', {teacher: user, 
+          return res.render('teacherdash', {teacher: client_side_teacher(user), 
             company_names: cnames, 
             open_transactions: opent,
             approved_transactions: apprt,
@@ -243,7 +299,7 @@ router.get('/companydashboard', function (req, res, next) {
           var rejet = alltrans.filter((trans, idx, arr) => trans.status == 'rejected');
           var compt = alltrans.filter((trans, idx, arr) => trans.status == 'completed');
 
-          return res.render('companydash', {company: user, 
+          return res.render('companydash', {company: client_side_company(user), 
             teacher_names: tnames, 
             open_transactions: opent,
             approved_transactions: apprt,
@@ -280,6 +336,23 @@ router.post('/companyopentransaction', function (req, res, next) {
       return res.redirect('/companydashboard');
     });
   });
+});
+
+// GET route after registering
+router.get('/companyprofile', function (req, res, next) {
+  Company.findById(req.query.company_id).exec(async function (error, user) {
+      if (error) { throw error; } else if (!user) {
+        res.send(`No company found with id ${req.query.company_id}`);
+      } else {
+        var alltrans = await Transaction.find({_id: {$in: user.transaction_ids}}).exec();
+        var compt = alltrans.filter((trans, idx, arr) => trans.status == 'completed');
+        return res.render('companyprofile', 
+          { session: client_side_session(req.session), 
+            company: client_side_company(user), 
+            completed_transactions: compt
+        });
+      }
+    });
 });
 
 

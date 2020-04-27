@@ -17,7 +17,13 @@
 		<div class="row">
 			<div class="two columns"><a class="u-full-width button" href="/">Home</a></div>
 			<div class="two columns"><a class="u-full-width button" href="/logout">Log out</a></div>
-			<div class="two columns"><a class="u-full-width button button-primary" href="/linkstripeaccount">Link Stripe</a></div>
+			<div class="three columns">
+				<form action="/companyprofile" method="get">
+					<input type="hidden" name="company_id" value="<%=company.id%>">
+					<input class="u-full-width button" type="submit" value="View Profile">
+				</form>
+			</div>
+			<div class="three columns"><a class="u-full-width button button-primary" href="/linkstripeaccount">Link Stripe</a></div>
 		</div>
 	</div>
 </head>
@@ -25,6 +31,7 @@
 <body>
 	
 	<div class='container'>
+		<h5>Request a transaction:</h5>
 		<div class="row">
 		  	<!-- Start a request -->
 			<form action="/companyopentransaction" method="post">
@@ -35,8 +42,8 @@
 					<select class="u-full-width" id="teacher" name="teacher">
 					<!-- <script type="text/javascript"> -->
 					    <option value="" disabled selected>Choose Teacher</option>
-					<% for (var i=0; i<= teacher_names.length; i++ ) { %>
-						<option value=<%= teacher_names[i] %>><%= teacher_names[i] %></option>
+					<% for (var i=0; i < teacher_names.length; i++ ) { %>
+						<option value=<%= teacher_names[i].id %>><%= teacher_names[i].name %></option>
 					<% } %>
 					<!-- </script> -->
 					</select>

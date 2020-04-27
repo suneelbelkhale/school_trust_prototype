@@ -17,15 +17,35 @@
 
 	<h4><strong>Login/Register</strong></h4>
 	<div class="row">
-		<div class="three columns"><a class="u-full-width button" href="/teacherreglog">Teacher</a></div>
-		<div class="three columns"><a class="u-full-width button" href="/companyreglog">Company</a></div>
+		<div class="four columns"><a class="u-pull-left u-full-width button" href="/teacherreglog">Teacher</a></div>
+		<div class="four columns"><a class="u-pull-right u-full-width button" href="/companyreglog">Company</a></div>
 	</div>
 
 	<p></p>
 	<h4><strong>Already Enrolled?</strong></h4>
 	<div class="row">
-		<div class="three columns"><a class="u-full-width button button-primary" href="/teacherdashboard">Teacher Dashboard</a></div>
-		<div class="three columns"><a class="u-full-width button button-primary" href="/companydashboard">Company Dashboard</a></div>
+		<div class="four columns"><a class="u-pull-left u-full-width button button-primary" href="/teacherdashboard">Teacher Dashboard</a></div>
+		<div class="four columns"><a class="u-pull-right u-full-width button button-primary" href="/companydashboard">Company Dashboard</a></div>
+	</div>
+
+	<p></p>
+	<h4><strong>View a Company Profile</strong></h4>
+	<div class="row">
+		<form action="/companyprofile" method="get">
+			<div class="four columns">
+				<select class="u-full-width" id="company" name="company_id">
+				<!-- <script type="text/javascript"> -->
+				    <option value="" disabled selected>Company Name</option>
+				<% for (var i=0; i< company_names.length; i++ ) { %>
+					<option value=<%= company_names[i].id %>><%= company_names[i].name %></option>
+				<% } %>
+				<!-- </script> -->
+				</select>
+			</div>
+			<div class="two columns">
+				<input type="submit" value="View Profile">
+			</div>
+		</form>
 	</div>
 </div>
 

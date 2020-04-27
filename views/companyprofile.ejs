@@ -1,0 +1,83 @@
+<html>
+
+<!-- requires session, company, completed_transactions -->
+
+
+<head>
+	<link rel="stylesheet" href="static/skeleton/css/normalize.css">
+	<link rel="stylesheet" href="static/skeleton/css/skeleton.css">
+
+	<div class='container'>
+		<div class="row"><div class="twelve columns"><h1> Company Profile </h1></div></div>
+		
+		<div class="row">
+			<div class="one column"><strong>Name: </strong></div>
+			<div class="four columns"><%= company.name %></div>
+		</div><br>
+		<div class="row">
+			<div class="one column"><strong>Contact: </strong></div>
+			<div class="four columns"><%= company.email %></div>
+		</div><br>
+		<form action="/set" method="post">
+			<input type="hidden" name="type" value="company">
+			<input type="hidden" name="user_id" value="<%=company.id%>">
+			<input type="hidden" name="param_name" value="bio">
+			<input type="hidden" name="incoming_route" value="/companydashboard?company_id=<%=company.id%>">
+
+			<div class="row">
+				<% if (company.id == session.companyId) {%>
+				<textarea class="u-full-width" rows=3 name="param_value"><%=company.bio%></textarea>
+				<% } else if (company.bio) {%>
+				<textarea class="u-full-width" rows=3 name="param_value" readonly="" style="padding-left: 0"><%=company.bio%></textarea>
+				<% } else {%>
+				<textarea class="u-full-width" rows=3 name="param_value" readonly="" style="padding-left: 0">This company has no bio!</textarea>
+				<% } %>
+			</div>
+			<% if (company.id == session.companyId) { // form button only if auth %>
+			<div class="row">
+				<div class="u-pull-left">
+					<input type="submit" value="Confirm edit">
+				</div>
+			</div>
+			<% } %>
+		</form><br>
+		<div class="row">
+			<div class="four columns"><strong>Total Donated:</strong> $<%=completed_transactions.reduce((total, next) => total + new Number(next.amount), 0) %>
+			</div>
+		</div><br>
+		<div class="row">
+			<div class="two columns"><a class="u-full-width button" href="/">Home</a></div>
+			<% if (company.id == session.companyId) { // form button only if auth %>
+				<div class="three columns"><a class="u-full-width button" href="/companydashboard">Dashboard</a></div>
+				<div class="two columns"><a class="u-full-width button button-primary" href="/logout">Logout</a></div>
+			<% } %>
+		</div>
+	</div>
+</head>
+
+<body>
+
+	<div class='container'>
+		<br>
+		<h5>Completed Transactions (<%=completed_transactions.length%>)</h5>
+		<table class="u-full-width">
+		  	<thead>
+			    <tr><th>From (Company)</th> <th>To (Teacher)</th> <th>Amount</th></tr>
+			</thead>
+			<tbody>
+				<% for (var i=0; i < completed_transactions.length; i++ ) { %>
+					<% var t = completed_transactions[i]; %>
+					<tr>
+						<td><%=t.company_name%></td>
+						<td><%=t.teacher_name%></td>
+						<td>$<%=t.amount%></td>
+				    </tr>
+				<% } %>
+			</tbody>
+		</table>
+
+	</div>
+
+</body>
+
+</html>
