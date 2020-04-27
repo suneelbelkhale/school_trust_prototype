@@ -7,3 +7,7 @@ create an .env file in the root to support stripe payments with the following va
 - STRIPE_CLIENT_ID
 
 This is the payment registery mechanism.
+
+## Screenshots
+
+See in the ./screenshots folder for some examples of what the running prototype website looks like.
