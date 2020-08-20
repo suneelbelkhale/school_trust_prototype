@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/suneelbelkhale/school_trust_prototype#readme",
   "dependencies": {
-    "bcrypt": "^4.0.1",
+    "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
     "chalk": "^4.0.0",
     "connect-mongo": "^3.2.0",
